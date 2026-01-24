@@ -1,7 +1,7 @@
 [![Python build package](https://github.com/colav/Oxomo/actions/workflows/python-package.yml/badge.svg)](https://github.com/colav/Oxomo/actions/workflows/python-package.yml)
 <center><img src="https://raw.githubusercontent.com/colav/colav.github.io/master/img/Logo.png"/></center>
 
-# Oxomo
+# Oxomoc
 Colav OAI-PMH Harvesting / Goddess of the night, the astrology and the calendar.
 
 # Description

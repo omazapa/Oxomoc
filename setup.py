@@ -72,12 +72,12 @@ def main():
         # Dependent packages (distributions)
         install_requires=[
             "xmltodict>=0.13.0",
-            "pyoai>=2.5.0",
+            "pyoai @ git+https://github.com/grupocolav/pyoai.git@master",
             "ratelimit>=2.2.1",
             "psutil",
             "pymongo>=3.12.0",
             "joblib>=1.1.0",
-            "lxml==4.9.3"
+            "lxml"
         ],
     )
 

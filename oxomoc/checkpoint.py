@@ -4,6 +4,40 @@ from pymongo import MongoClient
 import psutil
 
 
+def is_valid_oai_identifier(identifier):
+    """
+    Validate an OAI-PMH record identifier.
+
+    Some misconfigured DSpace OAI servers emit identifiers with a ``null`` or
+    empty namespace segment (e.g. ``oai:null:10726/3020``). These differ from
+    the valid ``oai:<host>:<local-id>`` form only by the namespace, so harvesting
+    them creates duplicate records for the same item that the ``_id`` uniqueness
+    constraint cannot catch. Rejecting them at the source keeps the harvest
+    idempotent.
+
+    Only the known-bad ``oai:<empty|null|none>:...`` case is rejected; any other
+    identifier scheme is accepted so non-DSpace repositories keep working.
+
+    Parameters:
+    ----------
+    identifier:str
+        OAI-PMH record identifier.
+
+    Returns:
+    ----------
+    bool
+        True if the identifier is usable, False if it is malformed.
+    """
+    if not identifier or not isinstance(identifier, str):
+        return False
+    parts = identifier.split(":")
+    if len(parts) >= 3 and parts[0] == "oai":
+        namespace = parts[1].strip().lower()
+        if namespace in ("", "null", "none"):
+            return False
+    return True
+
+
 class OxomocCheckPoint:
     """
     Class to handle checkpoints for Colav OAI-PMH
@@ -84,8 +118,16 @@ class OxomocCheckPoint:
         ids = client.listIdentifiers(metadataPrefix=metadataPrefix)
         identifiers = []
         counter = 0
+        skipped = 0
         for i in ids:
             _id = i.identifier()
+            if not is_valid_oai_identifier(_id):
+                skipped += 1
+                if skipped <= 5:
+                    print(
+                        f"=== WARNING: skipping malformed OAI identifier '{_id}' for {mongo_collection}")
+                counter += 1
+                continue
             if _id not in old_ids:
                 identifier = {}
                 identifier["_id"] = _id
@@ -98,6 +140,9 @@ class OxomocCheckPoint:
             if counter % 1000 == 0:
                 print(
                     f"=== INFO: CheckPoint: Processed {counter} records for {mongo_collection}")
+        if skipped:
+            print(
+                f"=== WARNING: skipped {skipped} malformed OAI identifiers (e.g. oai:null:...) for {mongo_collection}")
         identifiers = list(
             {item['_id']: item for item in identifiers}.values())
         if len(identifiers) > 0:

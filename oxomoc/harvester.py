@@ -1,4 +1,4 @@
-from oxomoc.checkpoint import OxomocCheckPoint
+from oxomoc.checkpoint import OxomocCheckPoint, is_valid_oai_identifier
 from oxomoc.ckpselective import OxomocCheckPointSelective
 from pymongo import MongoClient
 from oaipmh.client import Client
@@ -67,6 +67,13 @@ class OxomocHarvester:
         endpoint:str
             name of the endpoint to process and the MongoDb collection name
         """
+        if not is_valid_oai_identifier(identifier):
+            if self.verbose > 0:
+                print(
+                    f"=== WARNING: skipping malformed OAI identifier '{identifier}' for {endpoint}",
+                    file=sys.stderr)
+            return
+
         self.check_limit[endpoint]()
 
         try:
